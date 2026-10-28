@@ -114,7 +114,7 @@ final class ProtocolTests: XCTestCase {
     }
 
     func testPositionExtrapolation() {
-        let track = Track(title: "T", artist: "A", duration: 100)
+        let track = TrackInfo(title: "T", artist: "A", duration: 100)
         let playing = PlaybackState(track: track, isPlaying: true, position: 10, timestamp: 1_000_000)
         XCTAssertEqual(playing.position(atServerTime: 1_002_500), 12.5, accuracy: 0.0001)
         XCTAssertEqual(playing.position(atServerTime: 1_500_000), 100, "clamped to the song length")
@@ -123,8 +123,8 @@ final class ProtocolTests: XCTestCase {
     }
 
     func testMatchKeyPrefersCatalogID() {
-        XCTAssertEqual(Track(catalogId: "1", isrc: "x", title: "T", artist: "A").matchKey, "id:1")
-        XCTAssertEqual(Track(catalogId: "", isrc: "abc", title: "T", artist: "A").matchKey, "isrc:ABC")
-        XCTAssertEqual(Track(title: "Tí", artist: "A").matchKey, "meta:tí|a")
+        XCTAssertEqual(TrackInfo(catalogId: "1", isrc: "x", title: "T", artist: "A").matchKey, "id:1")
+        XCTAssertEqual(TrackInfo(catalogId: "", isrc: "abc", title: "T", artist: "A").matchKey, "isrc:ABC")
+        XCTAssertEqual(TrackInfo(title: "Tí", artist: "A").matchKey, "meta:tí|a")
     }
 }

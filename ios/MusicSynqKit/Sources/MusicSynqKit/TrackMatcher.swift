@@ -21,12 +21,12 @@ public enum TrackMatcher {
     }
 
     /** The search text to send to the catalog for `track`. */
-    public static func searchTerm(for track: Track) -> String {
+    public static func searchTerm(for track: TrackInfo) -> String {
         "\(normalize(track.title)) \(normalize(primaryArtist(track.artist)))"
     }
 
     /** Index of the best match in `candidates`, or nil if none is convincing. */
-    public static func bestMatch(for track: Track, in candidates: [Candidate]) -> Int? {
+    public static func bestMatch(for track: TrackInfo, in candidates: [Candidate]) -> Int? {
         var best: (index: Int, score: Double)?
         for (index, candidate) in candidates.enumerated() {
             let score = score(track, candidate)
@@ -37,7 +37,7 @@ public enum TrackMatcher {
     }
 
     /** 0...1. Title matters most, then artist, then a duration sanity check. */
-    static func score(_ track: Track, _ candidate: Candidate) -> Double {
+    static func score(_ track: TrackInfo, _ candidate: Candidate) -> Double {
         let title = normalize(track.title)
         let candidateTitle = normalize(candidate.title)
         var score = 0.0

@@ -2,7 +2,7 @@ import Foundation
 
 /** What the guest's player is doing right now. */
 public struct LocalPlayerSnapshot: Equatable, Sendable {
-    /** `Track.matchKey` of the song loaded in the guest's player, if any. */
+    /** `TrackInfo.matchKey` of the song loaded in the guest's player, if any. */
     public var loadedKey: String?
     public var isPlaying: Bool
     /** Seconds. */
@@ -21,12 +21,12 @@ public enum SyncAction: Equatable, Sendable {
     /** Host isn't playing anything: stop. */
     case stop
     /** Load a different song, start at `position`, and play if `play`. */
-    case load(Track, position: Double, play: Bool)
+    case load(TrackInfo, position: Double, play: Bool)
     case play(seekTo: Double?)
     case pause(seekTo: Double?)
     case seek(to: Double)
     /** The host's song can't be played here (not in this country's catalog, say). Stay quiet. */
-    case unavailable(Track)
+    case unavailable(TrackInfo)
 }
 
 /**
@@ -58,7 +58,7 @@ public struct GuestSyncPlanner: Sendable {
     public private(set) var lead: Double
     public var leadRange: ClosedRange<Double>
 
-    /** Songs this device couldn't find in its catalog, by `Track.matchKey`. */
+    /** Songs this device couldn't find in its catalog, by `TrackInfo.matchKey`. */
     public var unavailableKeys: Set<String> = []
 
     private var lastCorrectionAt: Double?
@@ -117,7 +117,10 @@ public struct GuestSyncPlanner: Sendable {
 
         if target.isPlaying != local.isPlaying {
             if target.isPlaying {
-                let seek = abs(drift) > tolerance && !nearEnd ? clamp(expected + lead, track) : nil
+                // Our copy of the song ended a moment before the host's did. Playing
+                // now would restart it; the host's next song is about to arrive.
+                if nearEnd { return .none }
+                let seek = abs(drift) > tolerance ? clamp(expected + lead, track) : nil
                 return corrected(.play(seekTo: seek), at: now, measuring: seek != nil)
             }
             // Pausing: line up exactly with where the host stopped.
@@ -154,7 +157,7 @@ public struct GuestSyncPlanner: Sendable {
         lead = min(max(lead + (ideal - lead) * 0.5, leadRange.lowerBound), leadRange.upperBound)
     }
 
-    private func clamp(_ position: Double, _ track: Track) -> Double {
+    private func clamp(_ position: Double, _ track: TrackInfo) -> Double {
         var value = max(0, position)
         if let duration = track.duration, duration > 0 { value = min(value, max(0, duration - 0.5)) }
         return value

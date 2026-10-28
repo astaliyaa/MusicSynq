@@ -30,15 +30,15 @@ final class ClockSyncTests: XCTestCase {
 }
 
 final class GuestSyncPlannerTests: XCTestCase {
-    let song = Track(catalogId: "1", title: "Song", artist: "Artist", duration: 200)
-    let other = Track(catalogId: "2", title: "Other", artist: "Artist", duration: 180)
+    let song = TrackInfo(catalogId: "1", title: "Song", artist: "Artist", duration: 200)
+    let other = TrackInfo(catalogId: "2", title: "Other", artist: "Artist", duration: 180)
     let t0 = 1_000_000.0 // server ms
 
-    func state(_ track: Track?, playing: Bool, at position: Double, ms: Double? = nil) -> PlaybackState {
+    func state(_ track: TrackInfo?, playing: Bool, at position: Double, ms: Double? = nil) -> PlaybackState {
         PlaybackState(track: track, isPlaying: playing, position: position, timestamp: Int64(ms ?? t0))
     }
 
-    func local(_ track: Track?, playing: Bool, at position: Double) -> LocalPlayerSnapshot {
+    func local(_ track: TrackInfo?, playing: Bool, at position: Double) -> LocalPlayerSnapshot {
         LocalPlayerSnapshot(loadedKey: track?.matchKey, isPlaying: playing, position: position)
     }
 
@@ -119,17 +119,19 @@ final class GuestSyncPlannerTests: XCTestCase {
         XCTAssertEqual(planner.plan(for: state(song, playing: true, at: 5), local: local(other, playing: false, at: 5), serverNow: t0, trigger: .tick), .none)
     }
 
-    func testDoesNotSeekRightAtTheEndOfASong() {
+    func testLeavesTheEndOfASongAlone() {
         var planner = GuestSyncPlanner()
         let target = state(song, playing: true, at: 199)
-        XCTAssertEqual(planner.plan(for: target, local: local(song, playing: true, at: 196), serverNow: t0, trigger: .tick), .none)
+        XCTAssertEqual(planner.plan(for: target, local: local(song, playing: true, at: 196), serverNow: t0, trigger: .tick), .none, "no seek")
+        // Our copy already finished; don't restart it while waiting for the host's next song.
+        XCTAssertEqual(planner.plan(for: target, local: local(song, playing: false, at: 0), serverNow: t0 + 1_500, trigger: .tick), .none, "no replay")
     }
 }
 
 final class HostReportPolicyTests: XCTestCase {
-    let song = Track(catalogId: "1", title: "Song", artist: "Artist", duration: 200)
+    let song = TrackInfo(catalogId: "1", title: "Song", artist: "Artist", duration: 200)
 
-    func observed(_ track: Track?, playing: Bool, at position: Double, ms: Int64) -> PlaybackState {
+    func observed(_ track: TrackInfo?, playing: Bool, at position: Double, ms: Int64) -> PlaybackState {
         PlaybackState(track: track, isPlaying: playing, position: position, timestamp: ms)
     }
 
@@ -144,7 +146,7 @@ final class HostReportPolicyTests: XCTestCase {
         XCTAssertTrue(policy.shouldSend(observed(song, playing: false, at: 30.2, ms: 22_700)), "paused heartbeat")
         XCTAssertTrue(policy.shouldSend(observed(song, playing: true, at: 30.2, ms: 23_000)), "resume")
         XCTAssertTrue(policy.shouldSend(observed(song, playing: true, at: 35.2, ms: 28_000)), "playing heartbeat")
-        let next = Track(catalogId: "2", title: "Next", artist: "Artist")
+        let next = TrackInfo(catalogId: "2", title: "Next", artist: "Artist")
         XCTAssertTrue(policy.shouldSend(observed(next, playing: true, at: 0, ms: 28_100)), "new song")
         XCTAssertTrue(policy.shouldSend(observed(nil, playing: false, at: 0, ms: 28_200)), "stopped")
     }
@@ -158,7 +160,7 @@ final class TrackMatcherTests: XCTestCase {
     }
 
     func testPicksTheRightSearchResult() {
-        let track = Track(title: "Dancing Queen", artist: "ABBA", duration: 230)
+        let track = TrackInfo(title: "Dancing Queen", artist: "ABBA", duration: 230)
         let candidates = [
             TrackMatcher.Candidate(title: "Dancing Queen (Glee Cast Version)", artist: "Glee Cast", duration: 210),
             TrackMatcher.Candidate(title: "Dancing Queen", artist: "ABBA", duration: 231),
@@ -166,6 +168,6 @@ final class TrackMatcherTests: XCTestCase {
         ]
         XCTAssertEqual(TrackMatcher.bestMatch(for: track, in: candidates), 1)
         XCTAssertNil(TrackMatcher.bestMatch(for: track, in: [TrackMatcher.Candidate(title: "Waterloo", artist: "ABBA", duration: 230)]))
-        XCTAssertEqual(TrackMatcher.searchTerm(for: Track(title: "Song (Remix)", artist: "A & B")), "song a")
+        XCTAssertEqual(TrackMatcher.searchTerm(for: TrackInfo(title: "Song (Remix)", artist: "A & B")), "song a")
     }
 }

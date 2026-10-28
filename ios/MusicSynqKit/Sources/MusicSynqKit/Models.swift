@@ -135,7 +135,7 @@ public struct PartySummary: Codable, Hashable, Identifiable, Sendable {
     public var host: User
     public var memberCount: Int
     public var createdAt: Int64
-    public var nowPlaying: Track?
+    public var nowPlaying: TrackInfo?
     public var isPlaying: Bool
     /** Your pending request to join, if you've asked. */
     public var myRequest: JoinRequest?
@@ -180,7 +180,7 @@ public enum ControlAction: String, Codable, Sendable {
  * Enough information for any guest to find the same song in their own
  * country's Apple Music catalog.
  */
-public struct Track: Codable, Hashable, Sendable {
+public struct TrackInfo: Codable, Hashable, Sendable {
     /** Apple Music catalog song ID (the same number as in a music.apple.com link). */
     public var catalogId: String?
     public var isrc: String?
@@ -227,13 +227,13 @@ public struct Track: Codable, Hashable, Sendable {
  * `timestamp` (server-clock milliseconds), moving at `rate` while playing.
  */
 public struct PlaybackState: Codable, Hashable, Sendable {
-    public var track: Track?
+    public var track: TrackInfo?
     public var isPlaying: Bool
     public var position: Double
     public var timestamp: Int64
     public var rate: Double
 
-    public init(track: Track?, isPlaying: Bool, position: Double, timestamp: Int64, rate: Double = 1) {
+    public init(track: TrackInfo?, isPlaying: Bool, position: Double, timestamp: Int64, rate: Double = 1) {
         self.track = track
         self.isPlaying = isPlaying
         self.position = position
@@ -247,7 +247,7 @@ public struct PlaybackState: Codable, Hashable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        track = try c.decodeIfPresent(Track.self, forKey: .track)
+        track = try c.decodeIfPresent(TrackInfo.self, forKey: .track)
         isPlaying = try c.decode(Bool.self, forKey: .isPlaying)
         position = try c.decode(Double.self, forKey: .position)
         timestamp = try c.decode(Int64.self, forKey: .timestamp)

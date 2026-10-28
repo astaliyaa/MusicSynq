@@ -1,6 +1,13 @@
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 
+// Settings can come from a .env file next to package.json (see .env.example).
+try {
+  process.loadEnvFile();
+} catch {
+  // No .env file: use the environment as is.
+}
+
 const config = loadConfig();
 const app = await buildApp(config);
 

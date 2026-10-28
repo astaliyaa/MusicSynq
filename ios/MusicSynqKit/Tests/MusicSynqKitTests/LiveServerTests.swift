@@ -169,7 +169,7 @@ final class LiveServerTests: XCTestCase {
         XCTAssertLessThan(abs(try XCTUnwrap(hostSocket.clock.offset)), 1_000)
 
         // Host plays a song; the guest's planner decides to load it.
-        let track = Track(catalogId: "1440857781", isrc: "GBUM71029604", title: "Dancing Queen", artist: "ABBA", duration: 230)
+        let track = TrackInfo(catalogId: "1440857781", isrc: "GBUM71029604", title: "Dancing Queen", artist: "ABBA", duration: 230)
         let state = PlaybackState(track: track, isPlaying: true, position: 12, timestamp: Int64(hostSocket.clock.serverNow()))
         hostSocket.send(.playback(state))
         let received: PlaybackState = try await guestInbox.next { if case let .playback(_, playback) = $0 { return playback } else { return nil } }
