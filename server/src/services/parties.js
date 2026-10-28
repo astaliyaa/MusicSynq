@@ -410,6 +410,14 @@ export class PartyService {
     if (hosted) this.end(hosted.id, "account_deleted");
     const current = this.currentFor(userId);
     if (current) this.removeGuest(current, userId, "left");
+    // Withdraw their open requests so hosts aren't left with a prompt for someone who's gone.
+    const asked = this.db
+      .prepare("SELECT DISTINCT party_id FROM join_requests WHERE user_id = ? AND status = 'pending'")
+      .all(userId);
+    this.db
+      .prepare("UPDATE join_requests SET status = 'cancelled', resolved_at = ? WHERE user_id = ? AND status = 'pending'")
+      .run(Date.now(), userId);
+    for (const { party_id } of asked) this.broadcastParty(party_id);
   }
 
   // --------------------------------------------------------------- playback

@@ -54,7 +54,7 @@ An iOS app that syncs Apple Music between you and your friends, wherever in the 
 cd server
 npm install
 npm start            # http://localhost:8080
-npm test             # 22 tests: accounts, friends, parties, sync messages, push signing
+npm test             # accounts, friends, parties, sync messages, push signing
 ```
 
 For friends on different networks, deploy it somewhere public with HTTPS and a persistent disk for the SQLite database. There's a `Dockerfile`; on [Fly.io](https://fly.io), for example:

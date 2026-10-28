@@ -242,6 +242,17 @@ describe("listening parties", () => {
     assert.equal((await hostSocket.next("error")).code, "invalid_message");
   });
 
+  test("deleting your account withdraws your join requests", async () => {
+    const { host, guest, hostSocket } = await pair();
+    const { party } = (await host.post("/parties")).body;
+    await guest.post(`/parties/${party.id}/requests`);
+    await hostSocket.next("join_request");
+    hostSocket.drain("party.updated");
+    await guest.del("/me", { password: "correct horse battery" });
+    const updated = await hostSocket.next("party.updated");
+    assert.equal(updated.party.pendingRequests.length, 0);
+  });
+
   test("deleting your account ends the party you host", async () => {
     const { host, guest, guestSocket } = await pair();
     const { party } = (await host.post("/parties")).body;
